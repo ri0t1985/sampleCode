@@ -1,0 +1,49 @@
+version: '3.7'
+services:
+    php:
+        build:
+            context: ./docker/php
+        working_dir: /app/sample
+        volumes:
+            - ./:/app/sample
+        links:
+            - database
+        networks:
+            - backend
+
+    nginx:
+        image: nginx:stable
+        volumes:
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+            - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+            - ./docker/nginx/selfsigned.crt:/etc/cert/selfsigned.crt
+            - ./docker/nginx/selfsigned.key:/etc/cert/selfsigned.key
+            - ./:/app/sample
+        ports:
+            - "8000:443"
+        links:
+            - php
+        depends_on:
+            - php
+        networks:
+            - backend
+
+    database:
+        image: mariadb:10
+        volumes:
+            - sampleMysql:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: "verysecret"
+            MYSQL_DATABASE: "certificates"
+            MYSQL_USER: "vagrant"
+            MYSQL_PASSWORD: "secret"
+            TZ: "Europe/Amsterdam"
+        ports:
+            - "3310:3306"
+        networks:
+            - backend
+volumes:
+    sampleMysql:
+
+networks:
+    backend:
